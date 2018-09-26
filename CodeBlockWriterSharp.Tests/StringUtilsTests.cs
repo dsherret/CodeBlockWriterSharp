@@ -1,6 +1,6 @@
 using Xunit;
 
-namespace JavaScriptCodeBlockWriter.Tests
+namespace CodeBlockWriterSharp.Tests
 {
     public class StringUtilsTests
     {

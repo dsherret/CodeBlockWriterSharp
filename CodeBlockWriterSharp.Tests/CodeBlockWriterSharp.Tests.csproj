@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\JavaScriptCodeBlockWriter\JavaScriptCodeBlockWriter.csproj" />
+    <ProjectReference Include="..\CodeBlockWriterSharp\CodeBlockWriterSharp.csproj" />
   </ItemGroup>
 
 </Project>

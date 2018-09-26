@@ -1,11 +1,11 @@
 ﻿using System;
 using Xunit;
 
-namespace JavaScriptCodeBlockWriter.Tests
+namespace CodeBlockWriterSharp.Tests
 {
     // todo: need to port over all the tests from the javascript project...
 
-    public class JavaScriptCodeBlockWriterTests
+    public class CodeBlockWriterSharpTests
     {
         [Fact]
         public void BasicTest()
@@ -19,15 +19,15 @@ namespace JavaScriptCodeBlockWriter.Tests
             });
         }
 
-        private static void DoTest(string expected, Action<JavaScriptCodeBlockWriter> callback)
+        private static void DoTest(string expected, Action<CodeBlockWriterSharp> callback)
         {
-            DoForWriter(new JavaScriptCodeBlockWriter());
-            DoForWriter(new JavaScriptCodeBlockWriter(new Options
+            DoForWriter(new CodeBlockWriterSharp());
+            DoForWriter(new CodeBlockWriterSharp(new Options
             {
                 NewLine = "\r\n"
             }));
 
-            void DoForWriter(JavaScriptCodeBlockWriter writer)
+            void DoForWriter(CodeBlockWriterSharp writer)
             {
                 callback(writer);
                 Assert.Equal(expected.Replace("\n", writer.GetOptions().NewLine), writer.ToString());

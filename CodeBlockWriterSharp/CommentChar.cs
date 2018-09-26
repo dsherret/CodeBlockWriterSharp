@@ -1,4 +1,4 @@
-﻿namespace JavaScriptCodeBlockWriter
+﻿namespace CodeBlockWriterSharp
 {
     internal enum CommentChar
     {

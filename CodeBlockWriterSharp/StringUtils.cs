@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
 
-namespace JavaScriptCodeBlockWriter
+namespace CodeBlockWriterSharp
 {
     internal static class StringUtils
     {

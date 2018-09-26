@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace JavaScriptCodeBlockWriter
+namespace CodeBlockWriterSharp
 {
     public struct Options
     {
@@ -14,7 +14,7 @@ namespace JavaScriptCodeBlockWriter
         public bool? UseSingleQuote;
     }
 
-    public class JavaScriptCodeBlockWriter
+    public class CodeBlockWriterSharp
     {
         private readonly string _indentationText;
         private readonly string _newLine;
@@ -30,7 +30,7 @@ namespace JavaScriptCodeBlockWriter
         private bool _isInRegEx;
         private bool _isOnFirstLineOfBlock;
 
-        public JavaScriptCodeBlockWriter(Options? options = null)
+        public CodeBlockWriterSharp(Options? options = null)
         {
             _newLine = options?.NewLine ?? "\n";
             _useTabs = options?.UseTabs ?? false;
@@ -57,7 +57,7 @@ namespace JavaScriptCodeBlockWriter
         /// Queues the indentation level for the next lines written.
         /// </summary>
         /// <param name="indentationLevel">Indentation level to queue.</param>
-        public JavaScriptCodeBlockWriter QueueIndentationLevel(int indentationLevel)
+        public CodeBlockWriterSharp QueueIndentationLevel(int indentationLevel)
         {
             _queuedIndentation = GetIndentationLevelFromArg(indentationLevel);
             return this;
@@ -67,7 +67,7 @@ namespace JavaScriptCodeBlockWriter
         /// Queues the indentation level for the next lines written using the provided indentation text.
         /// </summary>
         /// <param name="indentationLevel">Gets the indentation level from the indentation text.</param>
-        public JavaScriptCodeBlockWriter QueueIndentationLevel(string indentationText)
+        public CodeBlockWriterSharp QueueIndentationLevel(string indentationText)
         {
             _queuedIndentation = GetIndentationLevelFromArg(indentationText);
             return this;
@@ -77,7 +77,7 @@ namespace JavaScriptCodeBlockWriter
         /// Sets the current indentation level.
         /// </summary>
         /// <param name="indentationLevel">Indentation level to be at.</param>
-        public JavaScriptCodeBlockWriter SetIndentationLevel(int indentationLevel)
+        public CodeBlockWriterSharp SetIndentationLevel(int indentationLevel)
         {
             _currentIndentation = GetIndentationLevelFromArg(indentationLevel);
             return this;
@@ -87,7 +87,7 @@ namespace JavaScriptCodeBlockWriter
         /// Sets the current indentation using the provided indentation text.
         /// </summary>
         /// <param name="indentationLevel">Gets the indentation level from the indentation text.</param>
-        public JavaScriptCodeBlockWriter SetIndentationLevel(string indentationText)
+        public CodeBlockWriterSharp SetIndentationLevel(string indentationText)
         {
             _currentIndentation = GetIndentationLevelFromArg(indentationText);
             return this;
@@ -106,7 +106,7 @@ namespace JavaScriptCodeBlockWriter
         /// Writes a block using braces.
         /// </summary>
         /// <param name="block">Write using the writer within this block.</param>
-        public JavaScriptCodeBlockWriter Block(Action block = null)
+        public CodeBlockWriterSharp Block(Action block = null)
         {
             NewLineIfNewLineOnNextWrite();
             SpaceIfLastNot();
@@ -119,7 +119,7 @@ namespace JavaScriptCodeBlockWriter
         /// Writes an inline block with braces.
         /// </summary>
         /// <param name="block">Write using the writer within this block.</param>
-        public JavaScriptCodeBlockWriter InlineBlock(Action block = null)
+        public CodeBlockWriterSharp InlineBlock(Action block = null)
         {
             NewLineIfNewLineOnNextWrite();
             Write("{");
@@ -133,7 +133,7 @@ namespace JavaScriptCodeBlockWriter
         /// Indents a block of code.
         /// </summary>
         /// <param name="block">Block to indent.</param>
-        public JavaScriptCodeBlockWriter IndentBlock(Action block)
+        public CodeBlockWriterSharp IndentBlock(Action block)
         {
             if (block == null)
                 throw new ArgumentNullException(nameof(block));
@@ -160,7 +160,7 @@ namespace JavaScriptCodeBlockWriter
         /// </summary>
         /// <param name="condition">Condition to evaluate.</param>
         /// <param name="textFunc">A function that returns a string to write if the condition is true.</param>
-        public JavaScriptCodeBlockWriter ConditionalWriteLine(bool? condition, Func<string> textFunc)
+        public CodeBlockWriterSharp ConditionalWriteLine(bool? condition, Func<string> textFunc)
         {
             if (condition == true)
                 WriteLine(textFunc());
@@ -172,7 +172,7 @@ namespace JavaScriptCodeBlockWriter
         /// </summary>
         /// <param name="condition">Condition to evaluate.</param>
         /// <param name="text">Text to write if the condition is true.</param>
-        public JavaScriptCodeBlockWriter ConditionalWriteLine(bool? condition, string text)
+        public CodeBlockWriterSharp ConditionalWriteLine(bool? condition, string text)
         {
             if (condition == true)
                 WriteLine(text);
@@ -184,7 +184,7 @@ namespace JavaScriptCodeBlockWriter
         /// Writes a line of text.
         /// </summary>
         /// <param name="text">Text to write.</param>
-        public JavaScriptCodeBlockWriter WriteLine(string text)
+        public CodeBlockWriterSharp WriteLine(string text)
         {
             NewLineIfNewLineOnNextWrite();
             if (_text.Length > 0)
@@ -198,7 +198,7 @@ namespace JavaScriptCodeBlockWriter
         /// <summary>
         /// Writes a newline if the last line was not a newline.
         /// </summary>
-        public JavaScriptCodeBlockWriter NewLineIfLastNot()
+        public CodeBlockWriterSharp NewLineIfLastNot()
         {
             NewLineIfNewLineOnNextWrite();
 
@@ -211,7 +211,7 @@ namespace JavaScriptCodeBlockWriter
         /// <summary>
         /// Writes a blank line if the last written text was not a blank line.
         /// </summary>
-        public JavaScriptCodeBlockWriter BlankLineIfLastNot()
+        public CodeBlockWriterSharp BlankLineIfLastNot()
         {
             if (!IsLastBlankLine())
                 BlankLine();
@@ -222,7 +222,7 @@ namespace JavaScriptCodeBlockWriter
         /// Writes a blank line if the condition is true.
         /// </summary>
         /// <param name="condition">Condition to evaluate.</param>
-        public JavaScriptCodeBlockWriter ConditionalBlankLine(bool? condition)
+        public CodeBlockWriterSharp ConditionalBlankLine(bool? condition)
         {
             if (condition == true)
                 this.BlankLine();
@@ -232,7 +232,7 @@ namespace JavaScriptCodeBlockWriter
         /// <summary>
         /// Writes a blank line.
         /// </summary>
-        public JavaScriptCodeBlockWriter BlankLine()
+        public CodeBlockWriterSharp BlankLine()
         {
             return NewLineIfLastNot().NewLine();
         }
@@ -240,7 +240,7 @@ namespace JavaScriptCodeBlockWriter
         /// <summary>
         /// Indents the code one level for the current line.
         /// </summary>
-        public JavaScriptCodeBlockWriter Indent()
+        public CodeBlockWriterSharp Indent()
         {
             NewLineIfNewLineOnNextWrite();
             return Write(_indentationText);
@@ -250,7 +250,7 @@ namespace JavaScriptCodeBlockWriter
         /// Writes a newline if the condition is true.
         /// </summary>
         /// <param name="condition">Condition to evaluate.</param>
-        public JavaScriptCodeBlockWriter ConditionalNewLine(bool? condition)
+        public CodeBlockWriterSharp ConditionalNewLine(bool? condition)
         {
             if (condition == true)
                 NewLine();
@@ -260,7 +260,7 @@ namespace JavaScriptCodeBlockWriter
         /// <summary>
         /// Writes a newline.
         /// </summary>
-        public JavaScriptCodeBlockWriter NewLine()
+        public CodeBlockWriterSharp NewLine()
         {
             _newLineOnNextWrite = false;
             BaseWriteNewline();
@@ -270,7 +270,7 @@ namespace JavaScriptCodeBlockWriter
         /// <summary>
         /// Writes a quote character.
         /// </summary>
-        public JavaScriptCodeBlockWriter Quote()
+        public CodeBlockWriterSharp Quote()
         {
             NewLineIfNewLineOnNextWrite();
             WriteIndentingNewLines(_quoteChar.ToString());
@@ -281,7 +281,7 @@ namespace JavaScriptCodeBlockWriter
         /// Writes text surrounded in quotes.
         /// </summary>
         /// <param name="text">Text to write.</param>
-        public JavaScriptCodeBlockWriter Quote(string text)
+        public CodeBlockWriterSharp Quote(string text)
         {
             NewLineIfNewLineOnNextWrite();
             WriteIndentingNewLines(_quoteChar + StringUtils.EscapeForWithinString(text, _quoteChar) + _quoteChar);
@@ -291,7 +291,7 @@ namespace JavaScriptCodeBlockWriter
         /// <summary>
         /// Writes a space if the last character was not a space.
         /// </summary>
-        public JavaScriptCodeBlockWriter SpaceIfLastNot()
+        public CodeBlockWriterSharp SpaceIfLastNot()
         {
             NewLineIfNewLineOnNextWrite();
 
@@ -305,7 +305,7 @@ namespace JavaScriptCodeBlockWriter
         /// Writes a space.
         /// </summary>
         /// <param name="times">Number of times to write a space.</param>
-        public JavaScriptCodeBlockWriter Space(int times = 1)
+        public CodeBlockWriterSharp Space(int times = 1)
         {
             NewLineIfNewLineOnNextWrite();
             WriteIndentingNewLines(new String(' ', times));
@@ -315,7 +315,7 @@ namespace JavaScriptCodeBlockWriter
         /// <summary>
         /// Writes a tab if the last character was not a tab.
         /// </summary>
-        public JavaScriptCodeBlockWriter TabIfLastNot()
+        public CodeBlockWriterSharp TabIfLastNot()
         {
             NewLineIfNewLineOnNextWrite();
 
@@ -329,7 +329,7 @@ namespace JavaScriptCodeBlockWriter
         /// Writes a tab.
         /// </summary>
         /// <param name="times">Number of times to write a tab.</param>
-        public JavaScriptCodeBlockWriter Tab(int times = 1)
+        public CodeBlockWriterSharp Tab(int times = 1)
         {
             NewLineIfNewLineOnNextWrite();
             WriteIndentingNewLines(new String('\t', times));
@@ -341,7 +341,7 @@ namespace JavaScriptCodeBlockWriter
         /// </summary>
         /// <param name="condition">Condition to evaluate.</param>
         /// <param name="textFunc">A function that returns a string to write if the condition is true.</param>
-        public JavaScriptCodeBlockWriter ConditionalWrite(bool? condition, Func<string> textFunc)
+        public CodeBlockWriterSharp ConditionalWrite(bool? condition, Func<string> textFunc)
         {
             if (condition == true)
                 Write(textFunc());
@@ -354,7 +354,7 @@ namespace JavaScriptCodeBlockWriter
         /// </summary>
         /// <param name="condition">Condition to evaluate.</param>
         /// <param name="text">Text to write if the condition is true.</param>
-        public JavaScriptCodeBlockWriter ConditionalWrite(bool? condition, string text)
+        public CodeBlockWriterSharp ConditionalWrite(bool? condition, string text)
         {
             if (condition == true)
                 Write(text);
@@ -366,7 +366,7 @@ namespace JavaScriptCodeBlockWriter
         /// Writes the provided text.
         /// </summary>
         /// <param name="text">Text to write.</param>
-        public JavaScriptCodeBlockWriter Write(string text)
+        public CodeBlockWriterSharp Write(string text)
         {
             NewLineIfNewLineOnNextWrite();
             WriteIndentingNewLines(text);
