@@ -22,11 +22,12 @@ namespace CodeBlockWriterSharp
         private readonly char _quoteChar;
         private readonly int _indentNumberOfSpaces;
         private readonly StringBuilder _text = new StringBuilder();
+        private readonly Stack<char> _stringCharStack = new Stack<char>();
+
         private double _currentIndentation;
         private double? _queuedIndentation;
         private bool _newLineOnNextWrite;
         private CommentChar? _currentCommentChar;
-        private Stack<char> _stringCharStack = new Stack<char>();
         private bool _isInRegEx;
         private bool _isOnFirstLineOfBlock;
 
@@ -66,7 +67,7 @@ namespace CodeBlockWriterSharp
         /// <summary>
         /// Queues the indentation level for the next lines written using the provided indentation text.
         /// </summary>
-        /// <param name="indentationLevel">Gets the indentation level from the indentation text.</param>
+        /// <param name="indentationText">Gets the indentation level from the indentation text.</param>
         public CodeBlockWriterSharp QueueIndentationLevel(string indentationText)
         {
             _queuedIndentation = GetIndentationLevelFromArg(indentationText);
@@ -86,7 +87,7 @@ namespace CodeBlockWriterSharp
         /// <summary>
         /// Sets the current indentation using the provided indentation text.
         /// </summary>
-        /// <param name="indentationLevel">Gets the indentation level from the indentation text.</param>
+        /// <param name="indentationText">Gets the indentation level from the indentation text.</param>
         public CodeBlockWriterSharp SetIndentationLevel(string indentationText)
         {
             _currentIndentation = GetIndentationLevelFromArg(indentationText);
@@ -188,9 +189,9 @@ namespace CodeBlockWriterSharp
         {
             NewLineIfNewLineOnNextWrite();
             if (_text.Length > 0)
-                this.NewLineIfLastNot();
-            this.WriteIndentingNewLines(text);
-            this.NewLine();
+                NewLineIfLastNot();
+            WriteIndentingNewLines(text);
+            NewLine();
 
             return this;
         }
@@ -202,8 +203,8 @@ namespace CodeBlockWriterSharp
         {
             NewLineIfNewLineOnNextWrite();
 
-            if (!this.IsLastNewLine())
-                this.NewLine();
+            if (!IsLastNewLine())
+                NewLine();
 
             return this;
         }
@@ -225,7 +226,7 @@ namespace CodeBlockWriterSharp
         public CodeBlockWriterSharp ConditionalBlankLine(bool? condition)
         {
             if (condition == true)
-                this.BlankLine();
+                BlankLine();
             return this;
         }
 
@@ -296,7 +297,7 @@ namespace CodeBlockWriterSharp
             NewLineIfNewLineOnNextWrite();
 
             if (!IsLastSpace())
-                this.WriteIndentingNewLines(" ");
+                WriteIndentingNewLines(" ");
 
             return this;
         }
@@ -308,7 +309,7 @@ namespace CodeBlockWriterSharp
         public CodeBlockWriterSharp Space(int times = 1)
         {
             NewLineIfNewLineOnNextWrite();
-            WriteIndentingNewLines(new String(' ', times));
+            WriteIndentingNewLines(new string(' ', times));
             return this;
         }
 
@@ -332,7 +333,7 @@ namespace CodeBlockWriterSharp
         public CodeBlockWriterSharp Tab(int times = 1)
         {
             NewLineIfNewLineOnNextWrite();
-            WriteIndentingNewLines(new String('\t', times));
+            WriteIndentingNewLines(new string('\t', times));
             return this;
         }
 
@@ -623,7 +624,7 @@ namespace CodeBlockWriterSharp
             return count;
         }
 
-        private static Regex _spacesOrTabs = new Regex("^[ \t]*$");
+        private static readonly Regex _spacesOrTabs = new Regex("^[ \t]*$");
 
         private double GetIndentationLevelFromArg(string text)
         {
@@ -636,9 +637,7 @@ namespace CodeBlockWriterSharp
 
         private static string GetIndentationText(bool useTabs, int numberSpaces)
         {
-            if (useTabs)
-                return "\t";
-            return new string(' ', numberSpaces);
+            return useTabs ? "\t" : new string(' ', numberSpaces);
         }
 
         private static void GetSpacesAndTabsCount(string str, out int spacesCount, out int tabsCount)
@@ -648,10 +647,15 @@ namespace CodeBlockWriterSharp
 
             foreach (var c in str)
             {
-                if (c == '\t')
-                    tabsCount++;
-                else if (c == ' ')
-                    spacesCount++;
+                switch (c)
+                {
+                    case '\t':
+                        tabsCount++;
+                        break;
+                    case ' ':
+                        spacesCount++;
+                        break;
+                }
             }
         }
     }
