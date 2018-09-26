@@ -5,7 +5,7 @@ namespace CodeBlockWriterSharp.Tests
 {
     // todo: need to port over all the tests from the javascript project...
 
-    public class CodeBlockWriterSharpTests
+    public class CodeBlockWriterTests
     {
         [Fact]
         public void BasicTest()
@@ -19,15 +19,15 @@ namespace CodeBlockWriterSharp.Tests
             });
         }
 
-        private static void DoTest(string expected, Action<CodeBlockWriterSharp> callback)
+        private static void DoTest(string expected, Action<CodeBlockWriter> callback)
         {
-            DoForWriter(new CodeBlockWriterSharp());
-            DoForWriter(new CodeBlockWriterSharp(new Options
+            DoForWriter(new CodeBlockWriter());
+            DoForWriter(new CodeBlockWriter(new Options
             {
                 NewLine = "\r\n"
             }));
 
-            void DoForWriter(CodeBlockWriterSharp writer)
+            void DoForWriter(CodeBlockWriter writer)
             {
                 callback(writer);
                 Assert.Equal(expected.Replace("\n", writer.GetOptions().NewLine), writer.ToString());
