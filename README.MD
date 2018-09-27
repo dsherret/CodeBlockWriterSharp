@@ -6,7 +6,7 @@ Conversion of [code-block-writer](https://github.com/dsherret/code-block-writer)
 
 ## Todo
 
-* Add tests.
+* Convert tests from code-block-writer to c#.
 
 ## Install
 
