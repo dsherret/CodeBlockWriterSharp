@@ -1,6 +1,6 @@
 # CodeBlockWriterSharp
 
-A simple code writer that assists with formatting and visualizing blocks of JavaScript or TypeScript code.
+Code writer that assists with formatting and visualizing blocks of JavaScript or TypeScript code.
 
 Conversion of [code-block-writer](https://github.com/dsherret/code-block-writer) to C# (.net standard and .net framework). **Note:** This is a very rough first pass. I need to convert the tests to ensure it's working properly.
 
