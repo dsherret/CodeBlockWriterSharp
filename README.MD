@@ -97,3 +97,8 @@ class MyClass extends OtherClass {
 * `GetLastChar()` - Gets the last character written.
 * `GetOptions()` - Gets the writer options.
 * `ToString()` - Gets the string.
+
+## Other Features
+
+* Does not indent within strings.
+* Escapes newlines within double and single quotes created with `.Quote(text)`.
