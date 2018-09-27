@@ -14,7 +14,7 @@ namespace CodeBlockWriterSharp
         public bool? UseSingleQuote;
     }
 
-    public class CodeBlockWriterSharp
+    public class CodeBlockWriter
     {
         private readonly string _indentationText;
         private readonly string _newLine;
@@ -22,15 +22,16 @@ namespace CodeBlockWriterSharp
         private readonly char _quoteChar;
         private readonly int _indentNumberOfSpaces;
         private readonly StringBuilder _text = new StringBuilder();
+        private readonly Stack<char> _stringCharStack = new Stack<char>();
+
         private double _currentIndentation;
         private double? _queuedIndentation;
         private bool _newLineOnNextWrite;
         private CommentChar? _currentCommentChar;
-        private Stack<char> _stringCharStack = new Stack<char>();
         private bool _isInRegEx;
         private bool _isOnFirstLineOfBlock;
 
-        public CodeBlockWriterSharp(Options? options = null)
+        public CodeBlockWriter(Options? options = null)
         {
             _newLine = options?.NewLine ?? "\n";
             _useTabs = options?.UseTabs ?? false;
@@ -57,7 +58,7 @@ namespace CodeBlockWriterSharp
         /// Queues the indentation level for the next lines written.
         /// </summary>
         /// <param name="indentationLevel">Indentation level to queue.</param>
-        public CodeBlockWriterSharp QueueIndentationLevel(int indentationLevel)
+        public CodeBlockWriter QueueIndentationLevel(int indentationLevel)
         {
             _queuedIndentation = GetIndentationLevelFromArg(indentationLevel);
             return this;
@@ -66,8 +67,8 @@ namespace CodeBlockWriterSharp
         /// <summary>
         /// Queues the indentation level for the next lines written using the provided indentation text.
         /// </summary>
-        /// <param name="indentationLevel">Gets the indentation level from the indentation text.</param>
-        public CodeBlockWriterSharp QueueIndentationLevel(string indentationText)
+        /// <param name="indentationText">Gets the indentation level from the indentation text.</param>
+        public CodeBlockWriter QueueIndentationLevel(string indentationText)
         {
             _queuedIndentation = GetIndentationLevelFromArg(indentationText);
             return this;
@@ -77,7 +78,7 @@ namespace CodeBlockWriterSharp
         /// Sets the current indentation level.
         /// </summary>
         /// <param name="indentationLevel">Indentation level to be at.</param>
-        public CodeBlockWriterSharp SetIndentationLevel(int indentationLevel)
+        public CodeBlockWriter SetIndentationLevel(int indentationLevel)
         {
             _currentIndentation = GetIndentationLevelFromArg(indentationLevel);
             return this;
@@ -86,8 +87,8 @@ namespace CodeBlockWriterSharp
         /// <summary>
         /// Sets the current indentation using the provided indentation text.
         /// </summary>
-        /// <param name="indentationLevel">Gets the indentation level from the indentation text.</param>
-        public CodeBlockWriterSharp SetIndentationLevel(string indentationText)
+        /// <param name="indentationText">Gets the indentation level from the indentation text.</param>
+        public CodeBlockWriter SetIndentationLevel(string indentationText)
         {
             _currentIndentation = GetIndentationLevelFromArg(indentationText);
             return this;
@@ -106,7 +107,7 @@ namespace CodeBlockWriterSharp
         /// Writes a block using braces.
         /// </summary>
         /// <param name="block">Write using the writer within this block.</param>
-        public CodeBlockWriterSharp Block(Action block = null)
+        public CodeBlockWriter Block(Action block = null)
         {
             NewLineIfNewLineOnNextWrite();
             SpaceIfLastNot();
@@ -119,7 +120,7 @@ namespace CodeBlockWriterSharp
         /// Writes an inline block with braces.
         /// </summary>
         /// <param name="block">Write using the writer within this block.</param>
-        public CodeBlockWriterSharp InlineBlock(Action block = null)
+        public CodeBlockWriter InlineBlock(Action block = null)
         {
             NewLineIfNewLineOnNextWrite();
             Write("{");
@@ -133,7 +134,7 @@ namespace CodeBlockWriterSharp
         /// Indents a block of code.
         /// </summary>
         /// <param name="block">Block to indent.</param>
-        public CodeBlockWriterSharp IndentBlock(Action block)
+        public CodeBlockWriter IndentBlock(Action block)
         {
             if (block == null)
                 throw new ArgumentNullException(nameof(block));
@@ -160,7 +161,7 @@ namespace CodeBlockWriterSharp
         /// </summary>
         /// <param name="condition">Condition to evaluate.</param>
         /// <param name="textFunc">A function that returns a string to write if the condition is true.</param>
-        public CodeBlockWriterSharp ConditionalWriteLine(bool? condition, Func<string> textFunc)
+        public CodeBlockWriter ConditionalWriteLine(bool? condition, Func<string> textFunc)
         {
             if (condition == true)
                 WriteLine(textFunc());
@@ -172,7 +173,7 @@ namespace CodeBlockWriterSharp
         /// </summary>
         /// <param name="condition">Condition to evaluate.</param>
         /// <param name="text">Text to write if the condition is true.</param>
-        public CodeBlockWriterSharp ConditionalWriteLine(bool? condition, string text)
+        public CodeBlockWriter ConditionalWriteLine(bool? condition, string text)
         {
             if (condition == true)
                 WriteLine(text);
@@ -184,13 +185,13 @@ namespace CodeBlockWriterSharp
         /// Writes a line of text.
         /// </summary>
         /// <param name="text">Text to write.</param>
-        public CodeBlockWriterSharp WriteLine(string text)
+        public CodeBlockWriter WriteLine(string text)
         {
             NewLineIfNewLineOnNextWrite();
             if (_text.Length > 0)
-                this.NewLineIfLastNot();
-            this.WriteIndentingNewLines(text);
-            this.NewLine();
+                NewLineIfLastNot();
+            WriteIndentingNewLines(text);
+            NewLine();
 
             return this;
         }
@@ -198,12 +199,12 @@ namespace CodeBlockWriterSharp
         /// <summary>
         /// Writes a newline if the last line was not a newline.
         /// </summary>
-        public CodeBlockWriterSharp NewLineIfLastNot()
+        public CodeBlockWriter NewLineIfLastNot()
         {
             NewLineIfNewLineOnNextWrite();
 
-            if (!this.IsLastNewLine())
-                this.NewLine();
+            if (!IsLastNewLine())
+                NewLine();
 
             return this;
         }
@@ -211,7 +212,7 @@ namespace CodeBlockWriterSharp
         /// <summary>
         /// Writes a blank line if the last written text was not a blank line.
         /// </summary>
-        public CodeBlockWriterSharp BlankLineIfLastNot()
+        public CodeBlockWriter BlankLineIfLastNot()
         {
             if (!IsLastBlankLine())
                 BlankLine();
@@ -222,17 +223,17 @@ namespace CodeBlockWriterSharp
         /// Writes a blank line if the condition is true.
         /// </summary>
         /// <param name="condition">Condition to evaluate.</param>
-        public CodeBlockWriterSharp ConditionalBlankLine(bool? condition)
+        public CodeBlockWriter ConditionalBlankLine(bool? condition)
         {
             if (condition == true)
-                this.BlankLine();
+                BlankLine();
             return this;
         }
 
         /// <summary>
         /// Writes a blank line.
         /// </summary>
-        public CodeBlockWriterSharp BlankLine()
+        public CodeBlockWriter BlankLine()
         {
             return NewLineIfLastNot().NewLine();
         }
@@ -240,7 +241,7 @@ namespace CodeBlockWriterSharp
         /// <summary>
         /// Indents the code one level for the current line.
         /// </summary>
-        public CodeBlockWriterSharp Indent()
+        public CodeBlockWriter Indent()
         {
             NewLineIfNewLineOnNextWrite();
             return Write(_indentationText);
@@ -250,7 +251,7 @@ namespace CodeBlockWriterSharp
         /// Writes a newline if the condition is true.
         /// </summary>
         /// <param name="condition">Condition to evaluate.</param>
-        public CodeBlockWriterSharp ConditionalNewLine(bool? condition)
+        public CodeBlockWriter ConditionalNewLine(bool? condition)
         {
             if (condition == true)
                 NewLine();
@@ -260,7 +261,7 @@ namespace CodeBlockWriterSharp
         /// <summary>
         /// Writes a newline.
         /// </summary>
-        public CodeBlockWriterSharp NewLine()
+        public CodeBlockWriter NewLine()
         {
             _newLineOnNextWrite = false;
             BaseWriteNewline();
@@ -270,7 +271,7 @@ namespace CodeBlockWriterSharp
         /// <summary>
         /// Writes a quote character.
         /// </summary>
-        public CodeBlockWriterSharp Quote()
+        public CodeBlockWriter Quote()
         {
             NewLineIfNewLineOnNextWrite();
             WriteIndentingNewLines(_quoteChar.ToString());
@@ -281,7 +282,7 @@ namespace CodeBlockWriterSharp
         /// Writes text surrounded in quotes.
         /// </summary>
         /// <param name="text">Text to write.</param>
-        public CodeBlockWriterSharp Quote(string text)
+        public CodeBlockWriter Quote(string text)
         {
             NewLineIfNewLineOnNextWrite();
             WriteIndentingNewLines(_quoteChar + StringUtils.EscapeForWithinString(text, _quoteChar) + _quoteChar);
@@ -291,12 +292,12 @@ namespace CodeBlockWriterSharp
         /// <summary>
         /// Writes a space if the last character was not a space.
         /// </summary>
-        public CodeBlockWriterSharp SpaceIfLastNot()
+        public CodeBlockWriter SpaceIfLastNot()
         {
             NewLineIfNewLineOnNextWrite();
 
             if (!IsLastSpace())
-                this.WriteIndentingNewLines(" ");
+                WriteIndentingNewLines(" ");
 
             return this;
         }
@@ -305,17 +306,17 @@ namespace CodeBlockWriterSharp
         /// Writes a space.
         /// </summary>
         /// <param name="times">Number of times to write a space.</param>
-        public CodeBlockWriterSharp Space(int times = 1)
+        public CodeBlockWriter Space(int times = 1)
         {
             NewLineIfNewLineOnNextWrite();
-            WriteIndentingNewLines(new String(' ', times));
+            WriteIndentingNewLines(new string(' ', times));
             return this;
         }
 
         /// <summary>
         /// Writes a tab if the last character was not a tab.
         /// </summary>
-        public CodeBlockWriterSharp TabIfLastNot()
+        public CodeBlockWriter TabIfLastNot()
         {
             NewLineIfNewLineOnNextWrite();
 
@@ -329,10 +330,10 @@ namespace CodeBlockWriterSharp
         /// Writes a tab.
         /// </summary>
         /// <param name="times">Number of times to write a tab.</param>
-        public CodeBlockWriterSharp Tab(int times = 1)
+        public CodeBlockWriter Tab(int times = 1)
         {
             NewLineIfNewLineOnNextWrite();
-            WriteIndentingNewLines(new String('\t', times));
+            WriteIndentingNewLines(new string('\t', times));
             return this;
         }
 
@@ -341,7 +342,7 @@ namespace CodeBlockWriterSharp
         /// </summary>
         /// <param name="condition">Condition to evaluate.</param>
         /// <param name="textFunc">A function that returns a string to write if the condition is true.</param>
-        public CodeBlockWriterSharp ConditionalWrite(bool? condition, Func<string> textFunc)
+        public CodeBlockWriter ConditionalWrite(bool? condition, Func<string> textFunc)
         {
             if (condition == true)
                 Write(textFunc());
@@ -354,7 +355,7 @@ namespace CodeBlockWriterSharp
         /// </summary>
         /// <param name="condition">Condition to evaluate.</param>
         /// <param name="text">Text to write if the condition is true.</param>
-        public CodeBlockWriterSharp ConditionalWrite(bool? condition, string text)
+        public CodeBlockWriter ConditionalWrite(bool? condition, string text)
         {
             if (condition == true)
                 Write(text);
@@ -366,7 +367,7 @@ namespace CodeBlockWriterSharp
         /// Writes the provided text.
         /// </summary>
         /// <param name="text">Text to write.</param>
-        public CodeBlockWriterSharp Write(string text)
+        public CodeBlockWriter Write(string text)
         {
             NewLineIfNewLineOnNextWrite();
             WriteIndentingNewLines(text);
@@ -623,7 +624,7 @@ namespace CodeBlockWriterSharp
             return count;
         }
 
-        private static Regex _spacesOrTabs = new Regex("^[ \t]*$");
+        private static readonly Regex _spacesOrTabs = new Regex("^[ \t]*$");
 
         private double GetIndentationLevelFromArg(string text)
         {
@@ -636,9 +637,7 @@ namespace CodeBlockWriterSharp
 
         private static string GetIndentationText(bool useTabs, int numberSpaces)
         {
-            if (useTabs)
-                return "\t";
-            return new string(' ', numberSpaces);
+            return useTabs ? "\t" : new string(' ', numberSpaces);
         }
 
         private static void GetSpacesAndTabsCount(string str, out int spacesCount, out int tabsCount)
@@ -648,10 +647,15 @@ namespace CodeBlockWriterSharp
 
             foreach (var c in str)
             {
-                if (c == '\t')
-                    tabsCount++;
-                else if (c == ' ')
-                    spacesCount++;
+                switch (c)
+                {
+                    case '\t':
+                        tabsCount++;
+                        break;
+                    case ' ':
+                        spacesCount++;
+                        break;
+                }
             }
         }
     }
