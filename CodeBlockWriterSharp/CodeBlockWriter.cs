@@ -110,7 +110,8 @@ namespace CodeBlockWriterSharp
         public CodeBlockWriter Block(Action block = null)
         {
             NewLineIfNewLineOnNextWrite();
-            SpaceIfLastNot();
+            if (GetLength() > 0 && !IsLastNewLine())
+                SpaceIfLastNot();
             InlineBlock(block);
             _newLineOnNextWrite = true;
             return this;

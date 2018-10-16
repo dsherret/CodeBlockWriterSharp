@@ -111,12 +111,21 @@ namespace CodeBlockWriterSharp.Tests
             });
         }
 
-        [Fact(Skip = "failing")]
+        [Fact]
         public void Block_NewLineBeforeBlock_DoesNotWriteSpace()
         {
             DoTest("test\n{\n}", writer =>
             {
                 writer.WriteLine("test").Block();
+            });
+        }
+
+        [Fact]
+        public void Block_FirstLineBlock_DoesNotWriteSpace()
+        {
+            DoTest("{\n}", writer =>
+            {
+                writer.Block();
             });
         }
 
