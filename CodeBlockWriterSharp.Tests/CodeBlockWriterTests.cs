@@ -66,10 +66,7 @@ namespace CodeBlockWriterSharp.Tests
         [Fact]
         public void Block_NoArgument_Writes()
         {
-            DoTest("test {\n}", writer =>
-            {
-                writer.Write("test").Block();
-            });
+            DoTest("test {\n}", writer => writer.Write("test").Block());
         }
 
         [Fact]
@@ -77,10 +74,7 @@ namespace CodeBlockWriterSharp.Tests
         {
             DoTest("test {\n    inside\n}", writer =>
             {
-                writer.Write("test").Block(() =>
-                {
-                    writer.Write("inside");
-                });
+                writer.Write("test").Block(() => writer.Write("inside"));
             });
         }
 
@@ -91,10 +85,7 @@ namespace CodeBlockWriterSharp.Tests
             {
                 writer.Write("test").Block(() =>
                 {
-                    writer.Write("inside").Block(() =>
-                    {
-                        writer.Write("inside again");
-                    });
+                    writer.Write("inside").Block(() => writer.Write("inside again"));
                 });
             });
         }
@@ -102,30 +93,43 @@ namespace CodeBlockWriterSharp.Tests
         [Fact]
         public void Block_SpaceBeforeBlock_DoesNotWriteSpace()
         {
-            DoTest("test {\n    inside\n}", writer =>
-            {
-                writer.Write("test ").Block(() =>
-                {
-                    writer.Write("inside");
-                });
-            });
+            DoTest("test {\n    inside\n}", writer => writer.Write("test ").Block(() => writer.Write("inside")));
         }
 
         [Fact]
         public void Block_NewLineBeforeBlock_DoesNotWriteSpace()
         {
-            DoTest("test\n{\n}", writer =>
-            {
-                writer.WriteLine("test").Block();
-            });
+            DoTest("test\n{\n}", writer => writer.WriteLine("test").Block());
         }
 
         [Fact]
         public void Block_FirstLineBlock_DoesNotWriteSpace()
         {
+            DoTest("{\n}", writer => writer.Block());
+        }
+
+        [Fact]
+        public void Block_NewLineInBlock_DoesNotWriteExtraNewLine()
+        {
+            DoTest("{\n    inside\n}", writer => writer.Block(() => writer.WriteLine("inside")));
+        }
+
+        [Fact]
+        public void Block_TextAfterBlock_AddsOnNewLine()
+        {
+            DoTest("{\n}\n ", writer => writer.Block().Space());
+        }
+
+        [Fact]
+        public void Block_ConditionalCallsFalse_DoesNotAddNewLine()
+        {
             DoTest("{\n}", writer =>
             {
-                writer.Block();
+                writer.Block()
+                    .ConditionalWrite(false, "test")
+                    .ConditionalWriteLine(false, "test")
+                    .ConditionalNewLine(false)
+                    .ConditionalBlankLine(false);
             });
         }
 
