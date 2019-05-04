@@ -19,6 +19,24 @@ namespace CodeBlockWriterSharp.Tests
             });
         }
 
+        [Theory]
+        [InlineData("\r\n", false)]
+        [InlineData("\n", false)]
+        [InlineData("\r", true)]
+        [InlineData("random", true)]
+        public void Constructor_VariousNewLines_OnlyAcceptsCertain(string newline, bool throws)
+        {
+            var ex = Record.Exception(() => new CodeBlockWriter(new Options
+            {
+                NewLine = newline
+            }));
+
+            if (throws)
+                Assert.IsType<ArgumentException>(ex);
+            else
+                Assert.Null(ex);
+        }
+
         [Fact]
         public void WriteLine_DefaultConstructor_WritesNewline()
         {

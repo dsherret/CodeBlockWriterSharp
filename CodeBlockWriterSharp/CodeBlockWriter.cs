@@ -38,6 +38,9 @@ namespace CodeBlockWriterSharp
             _indentNumberOfSpaces = options?.IndentNumberOfSpaces ?? 4;
             _indentationText = GetIndentationText(_useTabs, _indentNumberOfSpaces);
             _quoteChar = (options?.UseSingleQuote ?? false) ? '\'' : '"';
+
+            if (_newLine != "\r\n" && _newLine != "\n")
+                throw new ArgumentException("Only \\r\\n and \\n is allowed for newline.");
         }
 
         /// <summary>
