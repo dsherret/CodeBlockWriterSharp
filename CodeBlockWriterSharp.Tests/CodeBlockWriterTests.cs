@@ -188,6 +188,23 @@ namespace CodeBlockWriterSharp.Tests
             });
         }
 
+        [Theory]
+        [InlineData(null, "test\n    test")]
+        [InlineData(2, "test\n        test")]
+        public void Indent_VariousInputs_Indents(int? times, string expected)
+        {
+            DoTest(expected, writer =>
+            {
+                writer.WriteLine("test");
+                if (times.HasValue)
+                    writer.Indent(times.Value);
+                else
+                    writer.Indent();
+
+                writer.Write("test");
+            });
+        }
+
         private static void DoTest(string expected, Action<CodeBlockWriter> callback)
         {
             DoForWriters(DoForWriter);

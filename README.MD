@@ -68,11 +68,11 @@ class MyClass extends OtherClass {
 * `BlankLineIfLastNot()` - Writes a blank line if what was written last wasn't a blank line.
 * `Quote()` - Writes a quote character.
 * `Quote(string text)` - Writes text surrounded in quotes.
-* `Indent()` - Indents the current line.
+* `Indent(times = 1)` - Indents the current line. Optionally writes multiple indents when providing a number.
 * `IndentBlock(Action block = null)` - Indents a block of code.
-* `Space(int times = 1)` - Writes a space. Optionally writes multiple spaces if providing a number.
+* `Space(int times = 1)` - Writes a space. Optionally writes multiple spaces when providing a number.
 * `SpaceIfLastNot()` - Writes a space if the last was not a space.
-* `Tab(int times = 1)` - Writes a tab. Optionally writes multiple tabs if providing a number.
+* `Tab(int times = 1)` - Writes a tab. Optionally writes multiple tabs when providing a number.
 * `TabIfLastNot()` - Writes a tab if the last was not a tab.
 * `Write(string text)` - Writes some text.
 * `ConditionalNewLine(bool condition)` - Writes a newline if the condition is matched.

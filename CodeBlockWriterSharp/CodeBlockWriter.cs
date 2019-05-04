@@ -245,10 +245,13 @@ namespace CodeBlockWriterSharp
         /// <summary>
         /// Indents the code one level for the current line.
         /// </summary>
-        public CodeBlockWriter Indent()
+        /// <param name="times">Number of times to indent.</param>
+        public CodeBlockWriter Indent(int times = 1)
         {
             NewLineIfNewLineOnNextWrite();
-            return Write(_indentationText);
+            for (var i = 0; i < times; i++)
+                Write(_indentationText);
+            return this;
         }
 
         /// <summary>
