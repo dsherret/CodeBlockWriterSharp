@@ -535,13 +535,21 @@ namespace CodeBlockWriterSharp
             _queuedIndentation = null;
         }
 
+        private static readonly HashSet<char> _isCharToHandle = new HashSet<char> { '/', '\\', '\n', '\r', '*', '"', '\'', '`', '{', '}' };
         private void UpdateInternalState(string str)
         {
             for (var i = 0; i < str.Length; i++)
             {
                 var currentChar = str[i];
+
+                // This is a performance optimization to short circuit all the checks below. If the current char
+                // is not in this set then it won't change any internal state so no need to continue and do
+                // so many other checks.
+                if (!_isCharToHandle.Contains(currentChar))
+                    continue;
+
                 var pastChar = i == 0 ? _text.GetSafeChar(_text.Length - 1) : str.GetSafeChar(i - 1);
-                var pastPastChar = i == 0 ? _text.GetSafeChar(_text.Length - 2) : str.GetSafeChar(i - 2);
+                var pastPastChar = i == 0 ? _text.GetSafeChar(_text.Length - 2) : i == 1 ? _text.GetSafeChar(_text.Length - 1) : str.GetSafeChar(i - 2);
 
                 // handle regex
                 if (_isInRegEx)
