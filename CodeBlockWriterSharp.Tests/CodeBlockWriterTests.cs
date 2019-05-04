@@ -205,6 +205,20 @@ namespace CodeBlockWriterSharp.Tests
             });
         }
 
+        [Theory]
+        [InlineData("test", "test")]
+        [InlineData("// test", "// test\n")]
+        [InlineData("/* test", "/* test */")]
+        [InlineData("/* test ", "/* test */")]
+        [InlineData("/* test\n", "/* test\n*/")]
+        public void CloseComment_VariousInputs_Closes(string startText, string expected)
+        {
+            DoTest(expected, writer =>
+            {
+                writer.Write(startText).CloseComment();
+            });
+        }
+
         private static void DoTest(string expected, Action<CodeBlockWriter> callback)
         {
             DoForWriters(DoForWriter);

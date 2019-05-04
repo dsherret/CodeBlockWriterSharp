@@ -1,11 +1,19 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27703.2000
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28803.352
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeBlockWriterSharp", "CodeBlockWriterSharp\CodeBlockWriterSharp.csproj", "{3F491C3B-01F7-4CC0-B8FA-E8AEDD93DDF1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeBlockWriterSharp.Tests", "CodeBlockWriterSharp.Tests\CodeBlockWriterSharp.Tests.csproj", "{51940C4F-CEE0-4B7B-BE3A-BA370A5B74A3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeBlockWriterSharp.Tests", "CodeBlockWriterSharp.Tests\CodeBlockWriterSharp.Tests.csproj", "{51940C4F-CEE0-4B7B-BE3A-BA370A5B74A3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documents", "Documents", "{55826CD8-235C-4C2B-BA87-36E0347F9EE2}"
+	ProjectSection(SolutionItems) = preProject
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		LICENSE = LICENSE
+		README.MD = README.MD
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

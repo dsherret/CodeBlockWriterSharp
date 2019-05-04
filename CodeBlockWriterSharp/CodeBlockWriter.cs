@@ -382,6 +382,28 @@ namespace CodeBlockWriterSharp
         }
 
         /// <summary>
+        /// Writes text to exist a comment if in a comment.
+        /// </summary>
+        public CodeBlockWriter CloseComment()
+        {
+            var commentChar = _currentCommentChar;
+
+            switch (commentChar)
+            {
+                case CommentChar.Line:
+                    NewLine();
+                    break;
+                case CommentChar.Star:
+                    if (!IsLastNewLine())
+                        SpaceIfLastNot();
+                    Write("*/");
+                    break;
+            }
+
+            return this;
+        }
+
+        /// <summary>
         /// Gets the length of the string in the printer.
         /// </summary>
         public int GetLength()
