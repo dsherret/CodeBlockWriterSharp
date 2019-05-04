@@ -151,7 +151,55 @@ namespace CodeBlockWriterSharp.Tests
             });
         }
 
+        [Theory]
+        [InlineData("s\"y\"", new bool[] { false, false, true, true, false })]
+        [InlineData("s'y'", new bool[] { false, false, true, true, false })]
+        [InlineData("s`y`", new bool[] { false, false, true, true, false })]
+        [InlineData("\"'`${}\"", new bool[] { false, true, true, true, true, true, true, false })]
+        [InlineData("'\"`${}'", new bool[] { false, true, true, true, true, true, true, false })]
+        [InlineData("`'\"`", new bool[] { false, true, true, true, false })]
+        [InlineData("`y${t}`", new bool[] { false, true, true, true, false, false, true, false })]
+        [InlineData("`${'t'}`", new bool[] { false, true, true, false, true, true, false, true, false })]
+        [InlineData("`${\"t\"}`", new bool[] { false, true, true, false, true, true, false, true, false })]
+        [InlineData("`${`t`}`", new bool[] { false, true, true, false, true, true, false, true, false })]
+        [InlineData("`${`${t}`}`", new bool[] { false, true, true, false, true, true, false, false, true, false, true, false })]
+        [InlineData("//'t'", new bool[] { false, false, false, false, false, false })]
+        [InlineData("//t\n't'", new bool[] { false, false, false, false, false, true, true, false })]
+        [InlineData("/*\n't'\n*/'t'", new bool[] { false, false, false, false, false, false, false, false, false, false, true, true, false })]
+        [InlineData("/'test/", new bool[] { false, false, false, false, false, false, false, false })]
+        [InlineData("/\"test/", new bool[] { false, false, false, false, false, false, false, false })]
+        [InlineData("/`test/", new bool[] { false, false, false, false, false, false, false, false })]
+        [InlineData("/`/'t'", new bool[] { false, false, false, false, true, true, false })]
+        [InlineData("'\\''", new bool[] { false, true, true, true, false })]
+        [InlineData("\"\\\"\"", new bool[] { false, true, true, true, false })]
+        [InlineData("`\\``", new bool[] { false, true, true, true, false })]
+        [InlineData("`\\${t}`", new bool[] { false, true, true, true, true, true, true, false })]
+        public void IsInString_VariousInputs_Expected(string text, bool[] expectedValues)
+        {
+            Assert.Equal(expectedValues.Length, text.Length + 1);
+            DoForWriters(writer =>
+            {
+                Assert.Equal(expectedValues[0], writer.IsInString());
+                for (var i = 0; i < text.Length; i++)
+                {
+                    writer.Write(text[i].ToString());
+                    Assert.Equal(expectedValues[i + 1], writer.IsInString());
+                }
+            });
+        }
+
         private static void DoTest(string expected, Action<CodeBlockWriter> callback)
+        {
+            DoForWriters(DoForWriter);
+
+            void DoForWriter(CodeBlockWriter writer)
+            {
+                callback(writer);
+                Assert.Equal(expected.Replace("\n", writer.GetOptions().NewLine), writer.ToString());
+            }
+        }
+
+        private static void DoForWriters(Action<CodeBlockWriter> callback)
         {
             DoForWriter(new CodeBlockWriter());
             DoForWriter(new CodeBlockWriter(new Options
@@ -162,7 +210,6 @@ namespace CodeBlockWriterSharp.Tests
             void DoForWriter(CodeBlockWriter writer)
             {
                 callback(writer);
-                Assert.Equal(expected.Replace("\n", writer.GetOptions().NewLine), writer.ToString());
             }
         }
     }

@@ -578,14 +578,14 @@ namespace CodeBlockWriterSharp
 
                 // handle strings
                 var lastStringCharOnStack = _stringCharStack.Any() ? _stringCharStack.Peek() : (char?)null;
-                if (currentChar == '"' || currentChar == '\'' || currentChar == '`')
+                if (pastChar != '\\' && (currentChar == '"' || currentChar == '\'' || currentChar == '`'))
                 {
                     if (lastStringCharOnStack == currentChar)
                         _stringCharStack.Pop();
                     else if (lastStringCharOnStack == '{' || lastStringCharOnStack == null)
                         _stringCharStack.Push(currentChar);
                 }
-                else if (pastChar == '$' && currentChar == '{' && lastStringCharOnStack == '`')
+                else if (pastPastChar != '\\' && pastChar == '$' && currentChar == '{' && lastStringCharOnStack == '`')
                     _stringCharStack.Push(currentChar);
                 else if (currentChar == '}' && lastStringCharOnStack == '{')
                     _stringCharStack.Pop();
