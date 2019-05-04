@@ -151,6 +151,99 @@ namespace CodeBlockWriterSharp.Tests
             });
         }
 
+        [Fact]
+        public void InlineBlock_EmptyInlineBlock_Allows()
+        {
+            DoTest("someCall({\n});", writer =>
+            {
+                writer.Write("someCall(").InlineBlock().Write(");");
+            });
+        }
+
+        [Fact]
+        public void InlineBlock_TextInside_Writes()
+        {
+            DoTest("someCall({\n    console.log();\n});", writer =>
+            {
+                writer.Write("someCall(").InlineBlock(() => writer.Write("console.log();")).Write(");");
+            });
+        }
+
+        [Fact]
+        public void IndentBlock_TextInside_Indents()
+        {
+            DoTest("test\n    inside", writer =>
+            {
+                writer.Write("test").IndentBlock(() => writer.Write("inside"));
+            });
+        }
+
+        [Fact]
+        public void IndentBlock_FirstLine_IndentsNoNewLine()
+        {
+            DoTest("    inside", writer =>
+            {
+                writer.IndentBlock(() => writer.Write("inside"));
+            });
+        }
+
+        [Fact]
+        public void IndentBlock_LastNewLine_NoNewLine()
+        {
+            DoTest("    inside\ntest", writer =>
+            {
+                writer.IndentBlock(() => writer.WriteLine("inside")).Write("test");
+            });
+        }
+
+        [Fact]
+        public void IndentBlock_LastNewLineInside_NoNewLine()
+        {
+            DoTest("test\n    inside", writer =>
+            {
+                writer.WriteLine("test").IndentBlock(() => writer.Write("inside"));
+            });
+        }
+
+        [Fact]
+        public void IndentBlock_Nested_IndentsAll()
+        {
+            DoTest("test\n    inside\n        inside again\ntest", writer =>
+            {
+                writer.Write("test").IndentBlock(() =>
+                {
+                    writer.Write("inside").IndentBlock(() =>
+                    {
+                        writer.Write("inside again");
+                    });
+                }).Write("test");
+            });
+        }
+
+        [Fact]
+        public void IndentBlock_StringInside_NoIndentInString()
+        {
+            DoTest("block\n    const t = `\nt`;\n    const u = 1;", writer =>
+            {
+                writer.Write("block").IndentBlock(() =>
+                {
+                    writer.Write("const t = `\nt`;\nconst u = 1;");
+                });
+            });
+        }
+
+        [Fact]
+        public void IndentBlock_CommentInside_Indents()
+        {
+            DoTest("block\n    const t = /*\n    const u = 1;*/", writer =>
+            {
+                writer.Write("block").IndentBlock(() =>
+                {
+                    writer.Write("const t = /*\nconst u = 1;*/");
+                });
+            });
+        }
+
         [Theory]
         [InlineData("s\"y\"", new bool[] { false, false, true, true, false })]
         [InlineData("s'y'", new bool[] { false, false, true, true, false })]
