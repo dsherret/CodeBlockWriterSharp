@@ -1,5 +1,7 @@
 # CodeBlockWriterSharp
 
+[![Build Status](https://dev.azure.com/dsherret/CodeBlockWriterSharp/_apis/build/status/dsherret.CodeBlockWriterSharp?branchName=master)](https://dev.azure.com/dsherret/CodeBlockWriterSharp/_build/latest?definitionId=2&branchName=master)
+
 Code writer that assists with formatting and visualizing blocks of JavaScript or TypeScript code.
 
 Conversion of [code-block-writer](https://github.com/dsherret/code-block-writer) to C# (.net standard and .net framework).
