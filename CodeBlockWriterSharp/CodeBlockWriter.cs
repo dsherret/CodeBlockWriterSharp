@@ -16,6 +16,18 @@ namespace CodeBlockWriterSharp
 
     public class CodeBlockWriter
     {
+        private readonly struct IndentationState
+        {
+            public readonly double Current;
+            public readonly double? Queued;
+
+            public IndentationState(double current, double? queued)
+            {
+                Current = current;
+                Queued = queued;
+            }
+        }
+
         private readonly string _indentationText;
         private readonly string _newLine;
         private readonly bool _useTabs;
@@ -74,6 +86,30 @@ namespace CodeBlockWriterSharp
         public CodeBlockWriter QueueIndentationLevel(string indentationText)
         {
             _queuedIndentation = GetIndentationLevelFromArg(indentationText);
+            return this;
+        }
+
+        /// <summary>
+        /// Writes the text within the provided action with hanging indentation.
+        /// </summary>
+        /// <param name="action">Writes to perform with hanging indentation.</param>
+        public CodeBlockWriter WithHangingIndentation(Action action)
+        {
+            return WithQueuedIndentationLevel(GetIndentationLevel() + 1, action);
+        }
+
+        private CodeBlockWriter WithQueuedIndentationLevel(int indentationLevel, Action action)
+        {
+            var previousState = GetIndentationState();
+            QueueIndentationLevel(indentationLevel);
+            try
+            {
+                action();
+            }
+            finally
+            {
+                SetIndentationState(previousState);
+            }
             return this;
         }
 
@@ -151,9 +187,9 @@ namespace CodeBlockWriterSharp
 
         private void IndentBlockInternal(Action block)
         {
-            _currentIndentation++;
             if (GetLastChar() != null)
                 NewLineIfLastNot();
+            _currentIndentation++;
             _isOnFirstLineOfBlock = true;
             block?.Invoke();
             _isOnFirstLineOfBlock = false;
@@ -538,7 +574,6 @@ namespace CodeBlockWriterSharp
 
                 UpdateInternalState(s);
                 _text.Append(s);
-                DequeueQueuedIndentation();
             }
         }
 
@@ -659,6 +694,17 @@ namespace CodeBlockWriterSharp
             if (count < 0)
                 throw new Exception("Passed in indentation level should be greater than or equal to 0.");
             return count;
+        }
+
+        private void SetIndentationState(IndentationState state)
+        {
+            _currentIndentation = state.Current;
+            _queuedIndentation = state.Queued;
+        }
+
+        private IndentationState GetIndentationState()
+        {
+            return new IndentationState(_currentIndentation, _queuedIndentation);
         }
 
         private static readonly Regex _spacesOrTabs = new Regex("^[ \t]*$");

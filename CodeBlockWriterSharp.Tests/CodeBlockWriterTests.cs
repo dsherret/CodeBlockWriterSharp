@@ -312,6 +312,59 @@ namespace CodeBlockWriterSharp.Tests
             });
         }
 
+        [Fact]
+        public void WithHangingIndentation_SingleIndentation_NewLine_QueuesAnIndentPlusOne()
+        {
+            var writer = new CodeBlockWriter();
+            writer.SetIndentationLevel(2);
+            writer.WithHangingIndentation(() =>
+            {
+                Assert.Equal(2, writer.GetIndentationLevel());
+                writer.NewLine();
+                Assert.Equal(3, writer.GetIndentationLevel());
+            });
+        }
+
+        [Fact]
+        public void WithHangingIndentation_SingleIndentation_WriteTextWithNewLine_QueuesAnIndentPlusOne()
+        {
+            var writer = new CodeBlockWriter();
+            writer.SetIndentationLevel(2);
+            writer.WithHangingIndentation(() =>
+            {
+                Assert.Equal(2, writer.GetIndentationLevel());
+                writer.Write("test\ntest");
+                Assert.Equal(3, writer.GetIndentationLevel());
+            });
+        }
+
+        [Fact]
+        public void WithHangingIndentation_NestedIndentationsOnSameLine_OnlyWritesOneIndent()
+        {
+            DoTest("(p: string\n    | number)", writer =>
+            {
+                writer.Write("(");
+                writer.WithHangingIndentation(() =>
+                {
+                    writer.Write("p");
+                    writer.WithHangingIndentation(() =>
+                    {
+                        writer.Write(": string\n| number");
+                    });
+                });
+                writer.Write(")");
+            });
+        }
+
+        [Fact]
+        public void WithHangingIndentation_Block_Handles()
+        {
+            DoTest("{\n    }", writer =>
+            {
+                writer.WithHangingIndentation(() => writer.Block());
+            });
+        }
+
         private static void DoTest(string expected, Action<CodeBlockWriter> callback)
         {
             DoForWriters(DoForWriter);

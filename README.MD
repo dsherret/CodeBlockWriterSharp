@@ -88,6 +88,7 @@ class MyClass extends OtherClass {
 * `GetIndentationLevel()` - Gets the current indentation level.
 * `QueueIndentationLevel(int indentationLevel)` - Queues an indentation level to be used once a new line is written.
 * `QueueIndentationLevel(string whitespaceText)` - Queues an indentation level to be used once a new line is written based on the provided whitespace text.
+* `WithHangingIndentation(Action action)` - Writes the code within the action with hanging indentation.
 * `CloseComment()` - Writes text to exit a comment if in a comment.
 * `IsInComment()` - Gets if the writer is currently in a comment.
 * `IsAtStartOfFirstLineOfBlock()` - Gets if the writer is currently at the start of the first line of the text, block, or indentation block.
