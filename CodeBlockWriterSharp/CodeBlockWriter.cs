@@ -134,6 +134,44 @@ namespace CodeBlockWriterSharp
         }
 
         /// <summary>
+        /// Sets the indentation level within the provided action and restores the writer's indentation state afterwards.
+        /// </summary>
+        /// <param name="indentationLevel">Indentation level to set.</param>
+        /// <param name="action">Action to perform with the indentation.</param>
+        /// <remarks>Restores the writer's indentation state after the action.</remarks>
+        public CodeBlockWriter WithIndentationLevel(int indentationLevel, Action action)
+        {
+            return WithIndentationLevel(() => SetIndentationLevel(indentationLevel), action);
+        }
+
+        /// <summary>
+        /// Sets the indentation level with the provided indentation text within the provided action and
+        /// restores the writer's indentation state afterwards.
+        /// </summary>
+        /// <param name="indentationText">.</param>
+        /// <param name="action">Action to perform with the indentation.</param>
+        /// <remarks>Restores the writer's indentation state after the action.</remarks>
+        public CodeBlockWriter WithIndentationLevel(string indentationText, Action action)
+        {
+            return WithIndentationLevel(() => SetIndentationLevel(indentationText), action);
+        }
+
+        private CodeBlockWriter WithIndentationLevel(Action setIndentationLevel, Action writeAction)
+        {
+            var previousState = GetIndentationState();
+            setIndentationLevel();
+            try
+            {
+                writeAction();
+            }
+            finally
+            {
+                SetIndentationState(previousState);
+            }
+            return this;
+        }
+
+        /// <summary>
         /// Gets the indentation level.
         /// </summary>
         public int GetIndentationLevel()

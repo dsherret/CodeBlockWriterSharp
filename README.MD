@@ -6,8 +6,6 @@ Code writer that assists with formatting and visualizing blocks of JavaScript or
 
 Conversion of [code-block-writer](https://github.com/dsherret/code-block-writer) to C# (.net standard and .net framework).
 
-**Note:** This is a very rough first pass. I need to convert the tests to ensure it's working properly.
-
 ## Todo
 
 * Convert tests from code-block-writer to c#.
@@ -87,6 +85,8 @@ class MyClass extends OtherClass {
 * `ConditionalWriteLine(bool condition, Func<string> textFunc)` - Writes some text and adds a newline if the condition is matched.
 * `SetIndentationLevel(int indentationLevel)` - Sets the current indentation level.
 * `SetIndentationLevel(string whitespaceText)` - Sets the current indentation level based on the provided whitespace text.
+* `WithIndentationLevel(int indentationLevel, Action action)` - Sets the indentation level within the provided action.
+* `WithIndentationLevel(string whitespaceText, Action action)` - Sets the indentation level based on the provided whitespace text within the action.
 * `GetIndentationLevel()` - Gets the current indentation level.
 * `QueueIndentationLevel(int indentationLevel)` - Queues an indentation level to be used once a new line is written.
 * `QueueIndentationLevel(string whitespaceText)` - Queues an indentation level to be used once a new line is written based on the provided whitespace text.

@@ -365,6 +365,28 @@ namespace CodeBlockWriterSharp.Tests
             });
         }
 
+        [Fact]
+        public void WithIndentationLevel_IndentationLevel_SetsWithinBlock()
+        {
+            var writer = new CodeBlockWriter();
+            writer.WithIndentationLevel(2, () =>
+            {
+                Assert.Equal(2, writer.GetIndentationLevel());
+            });
+            Assert.Equal(0, writer.GetIndentationLevel());
+        }
+
+        [Fact]
+        public void WithIndentationLevel_IndentationText_SetsWithinBlock()
+        {
+            var writer = new CodeBlockWriter();
+            writer.WithIndentationLevel("    ", () =>
+            {
+                Assert.Equal(1, writer.GetIndentationLevel());
+            });
+            Assert.Equal(0, writer.GetIndentationLevel());
+        }
+
         private static void DoTest(string expected, Action<CodeBlockWriter> callback)
         {
             DoForWriters(DoForWriter);
