@@ -13,7 +13,7 @@ steps:
   inputs:
     command: build
     projects: '**/*.csproj'
-    arguments: '--configuration $(buildConfiguration)'
+    arguments: '--configuration Release'
 - script: dotnet test CodeBlockWriterSharp.Tests/CodeBlockWriterSharp.Tests.csproj --configuration $(buildConfiguration) --logger trx --collect "Code coverage"'
 - task: PublishTestResults@2
   condition: succeededOrFailed()
