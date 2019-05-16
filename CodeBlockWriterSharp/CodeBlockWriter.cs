@@ -16,16 +16,16 @@ namespace CodeBlockWriterSharp
 
     public class CodeBlockWriter
     {
-        private readonly struct IndentationState
+        private struct IndentationState
         {
-            public readonly double Current;
-            public readonly double? Queued;
-
             public IndentationState(double current, double? queued)
             {
                 Current = current;
                 Queued = queued;
             }
+
+            public double Current { get; }
+            public double? Queued { get; }
         }
 
         private readonly string _indentationText;
