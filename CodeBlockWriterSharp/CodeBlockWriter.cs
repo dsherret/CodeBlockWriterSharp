@@ -633,21 +633,21 @@ namespace CodeBlockWriterSharp
             _queuedIndentation = null;
         }
 
-        private static readonly HashSet<char> _isCharToHandle = new HashSet<char> { '/', '\\', '\n', '\r', '*', '"', '\'', '`', '{', '}' };
         private void UpdateInternalState(string str)
         {
             for (var i = 0; i < str.Length; i++)
             {
                 var currentChar = str[i];
+                var pastChar = i == 0 ? _text.GetSafeChar(_text.Length - 1) : str[i - 1];
 
                 // This is a performance optimization to short circuit all the checks below. If the current char
                 // is not in this set then it won't change any internal state so no need to continue and do
-                // so many other checks.
-                if (!_isCharToHandle.Contains(currentChar))
+                // so many other checks. The char after a slash or newline still needs to be checked though
+                // because that's where the start and end of a regex is detected.
+                if (!IsCharToHandle(currentChar) && pastChar != '/' && pastChar != '\n')
                     continue;
 
-                var pastChar = i == 0 ? _text.GetSafeChar(_text.Length - 1) : str.GetSafeChar(i - 1);
-                var pastPastChar = i == 0 ? _text.GetSafeChar(_text.Length - 2) : i == 1 ? _text.GetSafeChar(_text.Length - 1) : str.GetSafeChar(i - 2);
+                var pastPastChar = GetCharForUpdate(str, i - 2);
 
                 // handle regex
                 if (_isInRegEx)
@@ -657,7 +657,7 @@ namespace CodeBlockWriterSharp
                     else
                         continue;
                 }
-                else if (!IsInString() && !IsInComment() && IsRegExStart(pastPastChar, pastChar, currentChar))
+                else if (!IsInString() && !IsInComment() && IsRegExStart(pastPastChar, pastChar, currentChar) && !IsDivision(str, i - 1))
                 {
                     _isInRegEx = true;
                     continue;
@@ -697,6 +697,91 @@ namespace CodeBlockWriterSharp
                     && pastPastChar != '*'
                     && pastPastChar != '/';
             }
+        }
+
+        private static bool IsCharToHandle(char c)
+        {
+            switch (c)
+            {
+                case '/':
+                case '\\':
+                case '\n':
+                case '\r':
+                case '*':
+                case '"':
+                case '\'':
+                case '`':
+                case '{':
+                case '}':
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Gets if the slash at the provided index is a division operator based on what comes before it
+        /// (ex. `a / b`, `(a) / b`, `a[0] / b`, `2 / b`, but not `return /a/`).
+        /// </summary>
+        private bool IsDivision(string str, int slashIndex)
+        {
+            var index = slashIndex - 1;
+            var c = GetCharForUpdate(str, index);
+            while (c == ' ' || c == '\t')
+                c = GetCharForUpdate(str, --index);
+
+            if (c == ')' || c == ']')
+                return true;
+            if (c == null || !IsIdentifierChar(c.Value))
+                return false;
+
+            // a word longer than the longest keyword (instanceof) is an identifier
+            var wordEnd = index;
+            while (c != null && IsIdentifierChar(c.Value) && wordEnd - index < 11)
+                c = GetCharForUpdate(str, --index);
+            return !IsKeywordBeforeRegEx(str, index + 1, wordEnd - index);
+
+            bool IsIdentifierChar(char value) => char.IsLetterOrDigit(value) || value == '_' || value == '$';
+        }
+
+        private bool IsKeywordBeforeRegEx(string str, int start, int length)
+        {
+            switch (length)
+            {
+                case 2:
+                    return Is("in") || Is("of") || Is("do");
+                case 3:
+                    return Is("new");
+                case 4:
+                    return Is("void") || Is("case") || Is("else");
+                case 5:
+                    return Is("throw") || Is("yield") || Is("await");
+                case 6:
+                    return Is("return") || Is("typeof") || Is("delete");
+                case 10:
+                    return Is("instanceof");
+                default:
+                    return false;
+            }
+
+            bool Is(string keyword)
+            {
+                for (var i = 0; i < keyword.Length; i++)
+                {
+                    if (GetCharForUpdate(str, start + i) != keyword[i])
+                        return false;
+                }
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Gets the char at the provided index of the text being written, where a negative index
+        /// goes back into the already written text.
+        /// </summary>
+        private char? GetCharForUpdate(string str, int index)
+        {
+            return index >= 0 ? str.GetSafeChar(index) : _text.GetSafeChar(_text.Length + index);
         }
 
         private void WriteIndentation()
