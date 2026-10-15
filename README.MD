@@ -1,6 +1,6 @@
 # CodeBlockWriterSharp
 
-[![Build Status](https://dev.azure.com/dsherret/CodeBlockWriterSharp/_apis/build/status/dsherret.CodeBlockWriterSharp?branchName=master)](https://dev.azure.com/dsherret/CodeBlockWriterSharp/_build/latest?definitionId=2&branchName=master)
+[![CI](https://github.com/dsherret/CodeBlockWriterSharp/actions/workflows/ci.yml/badge.svg)](https://github.com/dsherret/CodeBlockWriterSharp/actions/workflows/ci.yml)
 
 Code writer that assists with formatting and visualizing blocks of JavaScript or TypeScript code.
 
