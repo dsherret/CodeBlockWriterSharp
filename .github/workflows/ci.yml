@@ -8,11 +8,7 @@ on:
 
 jobs:
   build:
-    # windows in order to build for .net framework
-    runs-on: windows-latest
-    env:
-      # the test project targets netcoreapp2.0, which isn't installed on the runner
-      DOTNET_ROLL_FORWARD: LatestMajor
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v6
