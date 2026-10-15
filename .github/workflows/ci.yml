@@ -14,10 +14,10 @@ jobs:
       # the test project targets netcoreapp2.0, which isn't installed on the runner
       DOTNET_ROLL_FORWARD: LatestMajor
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 10.0.x
       - name: Build
         run: dotnet build --configuration Release
       - name: Test
