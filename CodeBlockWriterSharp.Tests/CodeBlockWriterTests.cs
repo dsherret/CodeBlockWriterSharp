@@ -244,6 +244,19 @@ namespace CodeBlockWriterSharp.Tests
             });
         }
 
+        [Fact]
+        public void IndentBlock_RegExWithQuoteInside_Indents()
+        {
+            DoTest("block {\n    const m = /name=\"?([^\";]+)\"?/i.exec(t);\n    const u = 1;\n}", writer =>
+            {
+                writer.Write("block").Block(() =>
+                {
+                    writer.WriteLine("const m = /name=\"?([^\";]+)\"?/i.exec(t);");
+                    writer.WriteLine("const u = 1;");
+                });
+            });
+        }
+
         [Theory]
         [InlineData("s\"y\"", new bool[] { false, false, true, true, false })]
         [InlineData("s'y'", new bool[] { false, false, true, true, false })]
@@ -263,6 +276,10 @@ namespace CodeBlockWriterSharp.Tests
         [InlineData("/\"test/", new bool[] { false, false, false, false, false, false, false, false })]
         [InlineData("/`test/", new bool[] { false, false, false, false, false, false, false, false })]
         [InlineData("/`/'t'", new bool[] { false, false, false, false, true, true, false })]
+        [InlineData("/t\"/'", new bool[] { false, false, false, false, false, true })]
+        [InlineData("return /t\"/'", new bool[] { false, false, false, false, false, false, false, false, false, false, false, false, true })]
+        [InlineData("a / 2 + 't'", new bool[] { false, false, false, false, false, false, false, false, false, true, true, false })]
+        [InlineData("`${a / 2}`", new bool[] { false, true, true, false, false, false, false, false, false, true, false })]
         [InlineData("'\\''", new bool[] { false, true, true, true, false })]
         [InlineData("\"\\\"\"", new bool[] { false, true, true, true, false })]
         [InlineData("`\\``", new bool[] { false, true, true, true, false })]
