@@ -7,11 +7,12 @@
     <Copyright>2019 David Sherret</Copyright>
     <PackageProjectUrl>https://github.com/dsherret/CodeBlockWriterSharp</PackageProjectUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.2.0</Version>
+    <Version>2.0.0</Version>
     <Description>Code writer that assists with formatting and visualizing blocks of JavaScript or TypeScript code.</Description>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageReleaseNotes>* Add `WithHangingIndentation(action)`
-* Add `WithIndentationLevel(levelOrWhiteSpaceText, action)`</PackageReleaseNotes>
+    <PackageReleaseNotes>* BREAKING: Drop the .NET Framework 4.6 target. The package now targets .NET Standard 2.0 and .NET 8.
+* Fix regexes that don't start with a special char not being detected, which could cause indentation to stop being written.
+* Improve write performance.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
