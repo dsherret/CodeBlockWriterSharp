@@ -1,27 +1,36 @@
 ﻿using System.Text;
-using System.Text.RegularExpressions;
 
 namespace CodeBlockWriterSharp
 {
     internal static class StringUtils
     {
-        private static readonly Regex _newLine = new Regex(@"(\r?\n)");
+        private static readonly char[] _doubleQuoteCharsToEscape = { '"', '\n' };
+        private static readonly char[] _singleQuoteCharsToEscape = { '\'', '\n' };
 
+        /// <summary>
+        /// Escapes the quote char and newlines (\r?\n) with a backslash.
+        /// </summary>
         public static string EscapeForWithinString(string str, char quoteKind)
         {
-            return _newLine.Replace(EscapeChar(str, quoteKind), "\\$1");
-        }
+            var charsToEscape = quoteKind == '"' ? _doubleQuoteCharsToEscape
+                : quoteKind == '\'' ? _singleQuoteCharsToEscape
+                : new[] { quoteKind, '\n' };
+            var index = str.IndexOfAny(charsToEscape);
+            if (index == -1)
+                return str;
 
-        public static string EscapeChar(string str, char character)
-        {
-            var result = "";
-            for (var i = 0; i < str.Length; i++)
+            var result = new StringBuilder(str.Length + 16);
+            var start = 0;
+            while (index != -1)
             {
-                if (str[i] == character)
-                    result += "\\";
-                result += str[i];
+                // the backslash goes before the \r in \r\n
+                var escapeIndex = str[index] == '\n' && index > 0 && str[index - 1] == '\r' ? index - 1 : index;
+                result.Append(str, start, escapeIndex - start).Append('\\');
+                start = escapeIndex;
+                index = index + 1 < str.Length ? str.IndexOfAny(charsToEscape, index + 1) : -1;
             }
-            return result;
+            result.Append(str, start, str.Length - start);
+            return result.ToString();
         }
 
         public static char? GetSafeChar(this StringBuilder sb, int index)
@@ -29,13 +38,6 @@ namespace CodeBlockWriterSharp
             if (index < 0 || index >= sb.Length)
                 return null;
             return sb[index];
-        }
-
-        public static char? GetSafeChar(this string str, int index)
-        {
-            if (index < 0 || index >= str.Length)
-                return null;
-            return str[index];
         }
     }
 }

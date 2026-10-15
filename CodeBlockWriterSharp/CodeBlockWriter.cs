@@ -1,6 +1,8 @@
 ﻿using System;
+#if NET8_0_OR_GREATER
+using System.Buffers;
+#endif
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -32,6 +34,7 @@ namespace CodeBlockWriterSharp
         private readonly string _newLine;
         private readonly bool _useTabs;
         private readonly char _quoteChar;
+        private readonly string _quoteText;
         private readonly int _indentNumberOfSpaces;
         private readonly StringBuilder _text = new StringBuilder();
         private readonly Stack<char> _stringCharStack = new Stack<char>();
@@ -42,6 +45,7 @@ namespace CodeBlockWriterSharp
         private CommentChar? _currentCommentChar;
         private bool _isInRegEx;
         private bool _isOnFirstLineOfBlock;
+        private char? _lastChar;
 
         public CodeBlockWriter(Options? options = null)
         {
@@ -50,6 +54,7 @@ namespace CodeBlockWriterSharp
             _indentNumberOfSpaces = options?.IndentNumberOfSpaces ?? 4;
             _indentationText = GetIndentationText(_useTabs, _indentNumberOfSpaces);
             _quoteChar = (options?.UseSingleQuote ?? false) ? '\'' : '"';
+            _quoteText = _quoteChar.ToString();
 
             if (_newLine != "\r\n" && _newLine != "\n")
                 throw new ArgumentException("Only \\r\\n and \\n is allowed for newline.");
@@ -355,7 +360,7 @@ namespace CodeBlockWriterSharp
         public CodeBlockWriter Quote()
         {
             NewLineIfNewLineOnNextWrite();
-            WriteIndentingNewLines(_quoteChar.ToString());
+            WriteIndentingNewLines(_quoteText);
             return this;
         }
 
@@ -366,7 +371,12 @@ namespace CodeBlockWriterSharp
         public CodeBlockWriter Quote(string text)
         {
             NewLineIfNewLineOnNextWrite();
-            WriteIndentingNewLines(_quoteChar + StringUtils.EscapeForWithinString(text, _quoteChar) + _quoteChar);
+            // write each part separately to avoid allocating a string for the quoted text
+            var escapedText = StringUtils.EscapeForWithinString(text, _quoteChar);
+            WriteIndentingNewLines(_quoteText);
+            if (escapedText.Length > 0)
+                WriteIndentingNewLines(escapedText);
+            WriteIndentingNewLines(_quoteText);
             return this;
         }
 
@@ -390,7 +400,7 @@ namespace CodeBlockWriterSharp
         public CodeBlockWriter Space(int times = 1)
         {
             NewLineIfNewLineOnNextWrite();
-            WriteIndentingNewLines(new string(' ', times));
+            WriteIndentingNewLines(times == 1 ? " " : new string(' ', times));
             return this;
         }
 
@@ -414,7 +424,7 @@ namespace CodeBlockWriterSharp
         public CodeBlockWriter Tab(int times = 1)
         {
             NewLineIfNewLineOnNextWrite();
-            WriteIndentingNewLines(new string('\t', times));
+            WriteIndentingNewLines(times == 1 ? "\t" : new string('\t', times));
             return this;
         }
 
@@ -514,7 +524,7 @@ namespace CodeBlockWriterSharp
         /// </summary>
         public bool IsInString()
         {
-            return _stringCharStack.Any() && _stringCharStack.Peek() != '{';
+            return _stringCharStack.Count > 0 && _stringCharStack.Peek() != '{';
         }
 
         /// <summary>
@@ -522,7 +532,7 @@ namespace CodeBlockWriterSharp
         /// </summary>
         public bool IsLastNewLine()
         {
-            return _text.GetSafeChar(_text.Length - 1) == '\n';
+            return _lastChar == '\n';
         }
 
         /// <summary>
@@ -567,7 +577,7 @@ namespace CodeBlockWriterSharp
         /// </summary>
         public char? GetLastChar()
         {
-            return _text.GetSafeChar(_text.Length - 1);
+            return _lastChar;
         }
 
         /// <summary>
@@ -578,41 +588,48 @@ namespace CodeBlockWriterSharp
             return _text.ToString();
         }
 
-        private static readonly Regex _newLineRegex = new Regex("\r?\n");
-
         private void WriteIndentingNewLines(string text)
         {
             text = text ?? "";
             if (text.Length == 0)
             {
-                WriteIndividual("");
+                WriteIndividual(text, 0, 0);
                 return;
             }
 
-            var items = _newLineRegex.Split(text);
-            for (var i = 0; i < items.Length; i++)
+            // write each line separately (splitting on \r?\n) without allocating substrings
+            var start = 0;
+            while (true)
             {
-                if (i > 0)
-                    BaseWriteNewline();
-
-                if (items[i].Length == 0)
-                    continue;
-
-                WriteIndividual(items[i]);
-            }
-
-            void WriteIndividual(string s)
-            {
-                if (!IsInString())
+                var newLineIndex = text.IndexOf('\n', start);
+                if (newLineIndex == -1)
                 {
-                    var isAtStartOfLine = IsLastNewLine() || _text.Length == 0;
-                    if (isAtStartOfLine)
-                        WriteIndentation();
+                    if (start < text.Length)
+                        WriteIndividual(text, start, text.Length);
+                    break;
                 }
 
-                UpdateInternalState(s);
-                _text.Append(s);
+                var end = newLineIndex > start && text[newLineIndex - 1] == '\r' ? newLineIndex - 1 : newLineIndex;
+                if (start < end)
+                    WriteIndividual(text, start, end);
+                BaseWriteNewline();
+                start = newLineIndex + 1;
             }
+        }
+
+        private void WriteIndividual(string text, int start, int end)
+        {
+            if (!IsInString())
+            {
+                var isAtStartOfLine = IsLastNewLine() || _text.Length == 0;
+                if (isAtStartOfLine)
+                    WriteIndentation();
+            }
+
+            UpdateInternalState(text, start, end);
+            _text.Append(text, start, end - start);
+            if (end > start)
+                _lastChar = text[end - 1];
         }
 
         private void BaseWriteNewline()
@@ -620,6 +637,7 @@ namespace CodeBlockWriterSharp
             if (_currentCommentChar == CommentChar.Line)
                 _currentCommentChar = null;
             _text.Append(_newLine);
+            _lastChar = '\n';
             _isOnFirstLineOfBlock = false;
             DequeueQueuedIndentation();
         }
@@ -633,63 +651,87 @@ namespace CodeBlockWriterSharp
             _queuedIndentation = null;
         }
 
-        private void UpdateInternalState(string str)
+        /// <summary>
+        /// Updates the internal state for the text between the start and end indexes that's about to
+        /// be written.
+        /// </summary>
+        private void UpdateInternalState(string str, int start, int end)
         {
-            for (var i = 0; i < str.Length; i++)
+            var i = start;
+
+            // the previously written text might mean the first char needs to be handled
+            if (i < end && !IsCharToHandle(str[i]))
             {
-                var currentChar = str[i];
-                var pastChar = i == 0 ? _text.GetSafeChar(_text.Length - 1) : str[i - 1];
-
-                // This is a performance optimization to short circuit all the checks below. If the current char
-                // is not in this set then it won't change any internal state so no need to continue and do
-                // so many other checks. The char after a slash or newline still needs to be checked though
-                // because that's where the start and end of a regex is detected.
-                if (!IsCharToHandle(currentChar) && pastChar != '/' && pastChar != '\n')
-                    continue;
-
-                var pastPastChar = GetCharForUpdate(str, i - 2);
-
-                // handle regex
-                if (_isInRegEx)
-                {
-                    if (pastChar == '/' && pastPastChar != '\\' || pastChar == '\n')
-                        _isInRegEx = false;
-                    else
-                        continue;
-                }
-                else if (!IsInString() && !IsInComment() && IsRegExStart(pastPastChar, pastChar, currentChar) && !IsDivision(str, i - 1))
-                {
-                    _isInRegEx = true;
-                    continue;
-                }
-
-                // handle comments
-                if (_currentCommentChar == null && pastChar == '/' && currentChar == '/')
-                    _currentCommentChar = CommentChar.Line;
-                else if (_currentCommentChar == null && pastChar == '/' && currentChar == '*')
-                    _currentCommentChar = CommentChar.Star;
-                else if (_currentCommentChar == CommentChar.Star && pastChar == '*' && currentChar == '/')
-                    _currentCommentChar = null;
-
-                if (IsInComment())
-                    continue;
-
-                // handle strings
-                var lastStringCharOnStack = _stringCharStack.Any() ? _stringCharStack.Peek() : (char?)null;
-                if (pastChar != '\\' && (currentChar == '"' || currentChar == '\'' || currentChar == '`'))
-                {
-                    if (lastStringCharOnStack == currentChar)
-                        _stringCharStack.Pop();
-                    else if (lastStringCharOnStack == '{' || lastStringCharOnStack == null)
-                        _stringCharStack.Push(currentChar);
-                }
-                else if (pastPastChar != '\\' && pastChar == '$' && currentChar == '{' && lastStringCharOnStack == '`')
-                    _stringCharStack.Push(currentChar);
-                else if (currentChar == '}' && lastStringCharOnStack == '{')
-                    _stringCharStack.Pop();
+                if (_lastChar == '/' || _lastChar == '\n')
+                    UpdateInternalStateForChar(str, start, i);
+                i++;
             }
 
-            bool IsRegExStart(char? pastPastChar, char? pastChar, char currentChar)
+            // this is a performance optimization to skip directly to the chars that may change the state
+            while (i < end)
+            {
+                var index = IndexOfCharToHandle(str, i, end);
+                if (index == -1)
+                    break;
+
+                UpdateInternalStateForChar(str, start, index);
+                i = index + 1;
+
+                var c = str[index];
+                if ((c == '/' || c == '\n') && i < end && !IsCharToHandle(str[i]))
+                {
+                    UpdateInternalStateForChar(str, start, i);
+                    i++;
+                }
+            }
+        }
+
+        private void UpdateInternalStateForChar(string str, int start, int i)
+        {
+            var currentChar = str[i];
+            var pastChar = GetCharForUpdate(str, start, i - 1);
+            var pastPastChar = GetCharForUpdate(str, start, i - 2);
+
+            // handle regex
+            if (_isInRegEx)
+            {
+                if (pastChar == '/' && pastPastChar != '\\' || pastChar == '\n')
+                    _isInRegEx = false;
+                else
+                    return;
+            }
+            else if (!IsInString() && !IsInComment() && IsRegExStart() && !IsDivision(str, start, i - 1))
+            {
+                _isInRegEx = true;
+                return;
+            }
+
+            // handle comments
+            if (_currentCommentChar == null && pastChar == '/' && currentChar == '/')
+                _currentCommentChar = CommentChar.Line;
+            else if (_currentCommentChar == null && pastChar == '/' && currentChar == '*')
+                _currentCommentChar = CommentChar.Star;
+            else if (_currentCommentChar == CommentChar.Star && pastChar == '*' && currentChar == '/')
+                _currentCommentChar = null;
+
+            if (IsInComment())
+                return;
+
+            // handle strings
+            var lastStringCharOnStack = _stringCharStack.Count > 0 ? _stringCharStack.Peek() : (char?)null;
+            if (pastChar != '\\' && (currentChar == '"' || currentChar == '\'' || currentChar == '`'))
+            {
+                if (lastStringCharOnStack == currentChar)
+                    _stringCharStack.Pop();
+                else if (lastStringCharOnStack == '{' || lastStringCharOnStack == null)
+                    _stringCharStack.Push(currentChar);
+            }
+            else if (pastPastChar != '\\' && pastChar == '$' && currentChar == '{' && lastStringCharOnStack == '`')
+                _stringCharStack.Push(currentChar);
+            else if (currentChar == '}' && lastStringCharOnStack == '{')
+                _stringCharStack.Pop();
+
+            bool IsRegExStart()
             {
                 return pastChar == '/'
                     && currentChar != '/'
@@ -699,6 +741,31 @@ namespace CodeBlockWriterSharp
             }
         }
 
+#if NET8_0_OR_GREATER
+        private static readonly SearchValues<char> _charsToHandle = SearchValues.Create("/\\\n\r*\"'`{}");
+
+        private static int IndexOfCharToHandle(string str, int start, int end)
+        {
+            var index = str.AsSpan(start, end - start).IndexOfAny(_charsToHandle);
+            return index == -1 ? -1 : start + index;
+        }
+#else
+        private static int IndexOfCharToHandle(string str, int start, int end)
+        {
+            for (var i = start; i < end; i++)
+            {
+                if (IsCharToHandle(str[i]))
+                    return i;
+            }
+            return -1;
+        }
+#endif
+
+        /// <summary>
+        /// Gets if the char may change the internal state. Every other char won't change the state unless
+        /// it comes directly after a slash or newline because that's where the start and end of a regex
+        /// is detected.
+        /// </summary>
         private static bool IsCharToHandle(char c)
         {
             switch (c)
@@ -723,12 +790,12 @@ namespace CodeBlockWriterSharp
         /// Gets if the slash at the provided index is a division operator based on what comes before it
         /// (ex. `a / b`, `(a) / b`, `a[0] / b`, `2 / b`, but not `return /a/`).
         /// </summary>
-        private bool IsDivision(string str, int slashIndex)
+        private bool IsDivision(string str, int start, int slashIndex)
         {
             var index = slashIndex - 1;
-            var c = GetCharForUpdate(str, index);
+            var c = GetCharForUpdate(str, start, index);
             while (c == ' ' || c == '\t')
-                c = GetCharForUpdate(str, --index);
+                c = GetCharForUpdate(str, start, --index);
 
             if (c == ')' || c == ']')
                 return true;
@@ -738,13 +805,13 @@ namespace CodeBlockWriterSharp
             // a word longer than the longest keyword (instanceof) is an identifier
             var wordEnd = index;
             while (c != null && IsIdentifierChar(c.Value) && wordEnd - index < 11)
-                c = GetCharForUpdate(str, --index);
-            return !IsKeywordBeforeRegEx(str, index + 1, wordEnd - index);
+                c = GetCharForUpdate(str, start, --index);
+            return !IsKeywordBeforeRegEx(str, start, index + 1, wordEnd - index);
 
             bool IsIdentifierChar(char value) => char.IsLetterOrDigit(value) || value == '_' || value == '$';
         }
 
-        private bool IsKeywordBeforeRegEx(string str, int start, int length)
+        private bool IsKeywordBeforeRegEx(string str, int start, int wordStart, int length)
         {
             switch (length)
             {
@@ -768,7 +835,7 @@ namespace CodeBlockWriterSharp
             {
                 for (var i = 0; i < keyword.Length; i++)
                 {
-                    if (GetCharForUpdate(str, start + i) != keyword[i])
+                    if (GetCharForUpdate(str, start, wordStart + i) != keyword[i])
                         return false;
                 }
                 return true;
@@ -776,31 +843,32 @@ namespace CodeBlockWriterSharp
         }
 
         /// <summary>
-        /// Gets the char at the provided index of the text being written, where a negative index
-        /// goes back into the already written text.
+        /// Gets the char at the provided index of the text being written, where an index before the
+        /// start goes back into the already written text.
         /// </summary>
-        private char? GetCharForUpdate(string str, int index)
+        private char? GetCharForUpdate(string str, int start, int index)
         {
-            return index >= 0 ? str.GetSafeChar(index) : _text.GetSafeChar(_text.Length + index);
+            if (index >= start)
+                return str[index];
+            if (index == start - 1)
+                return _lastChar;
+            return _text.GetSafeChar(_text.Length - (start - index));
         }
 
         private void WriteIndentation()
         {
             var flooredIndentation = Math.Floor(_currentIndentation);
-            for (var i = 0; i < (int)flooredIndentation; i++)
-                _text.Append(_indentationText);
-
             var overflow = _currentIndentation - flooredIndentation;
+            int count;
             if (_useTabs)
-            {
-                if (overflow > 0.5)
-                    _text.Append(_indentationText);
-            }
+                count = (int)flooredIndentation + (overflow > 0.5 ? 1 : 0);
             else
+                count = (int)flooredIndentation * _indentationText.Length + (int)Math.Round(_indentationText.Length * overflow);
+
+            if (count > 0)
             {
-                var portion = Math.Round(_indentationText.Length * overflow);
-                for (var i = 0; i < portion; i++)
-                    _text.Append(_indentationText[i]);
+                _text.Append(_useTabs ? '\t' : ' ', count);
+                _lastChar = _useTabs ? '\t' : ' ';
             }
         }
 
